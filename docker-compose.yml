@@ -1,0 +1,25 @@
+version: '3.8'
+services:
+  mcp-govern:
+    build: .
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      - BACKEND=${BACKEND:-supabase}
+      - LOG_BACKEND=${LOG_BACKEND:-file}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      - SUPABASE_LOG_URL=${SUPABASE_LOG_URL}
+      - SUPABASE_LOG_KEY=${SUPABASE_LOG_KEY}
+      - DATABRICKS_HOST=${DATABRICKS_HOST}
+      - DATABRICKS_TOKEN=${DATABRICKS_TOKEN}
+      - DATABRICKS_WAREHOUSE_ID=${DATABRICKS_WAREHOUSE_ID}
+      - DATABRICKS_LOG_CATALOG=${DATABRICKS_LOG_CATALOG}
+      - DATABRICKS_LOG_SCHEMA=${DATABRICKS_LOG_SCHEMA}
+      - DATABRICKS_LOG_TABLE=${DATABRICKS_LOG_TABLE}
+      - POSTGRES_LOG_URL=${POSTGRES_LOG_URL}
+      - WEBHOOK_SECRET=${WEBHOOK_SECRET}
+      - PORT=3000
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
