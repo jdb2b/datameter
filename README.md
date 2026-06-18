@@ -1,6 +1,6 @@
-# mcp-govern
+# Datameter
 
-mcp-govern is a self-hosted MCP server that sits between Claude and your data warehouse. When Claude runs a SQL query, it goes through mcp-govern first — the query is logged, costs are tracked, and results are returned. It gives your team visibility into what AI-generated queries are running, how often, and at what cost, without changing how Claude or your warehouse is configured.
+Datameter is a self-hosted MCP server that sits between Claude and your data warehouse — giving you visibility into what AI-generated queries are running, how often, and at what cost. The data engineer you don't have.
 
 Best suited for teams running Databricks, Snowflake, or BigQuery as their primary warehouse.
 
@@ -12,13 +12,13 @@ Best suited for teams running Databricks, Snowflake, or BigQuery as their primar
 Claude (claude.ai)
       │  MCP over HTTPS
       ▼
- mcp-govern                ← logs every query, tracks cost
+ Datameter                 ← logs every query, tracks cost
       │
       ├── Supabase ────────► Postgres warehouse
       └── Databricks ──────► Databricks SQL warehouse
 ```
 
-Claude connects via the MCP protocol. mcp-govern executes the query against your warehouse, logs the result, and returns rows to Claude. Nothing else touches the query.
+Claude connects via the MCP protocol. Datameter executes the query against your warehouse, logs the result, and returns rows to Claude. Nothing else touches the query.
 
 ---
 
@@ -27,8 +27,8 @@ Claude connects via the MCP protocol. mcp-govern executes the query against your
 **1. Clone the repo**
 
 ```bash
-git clone https://github.com/jdb2b/mcp-govern.git
-cd mcp-govern
+git clone https://github.com/jdb2b/datameter.git
+cd datameter
 ```
 
 **2. Create your env file**
@@ -116,7 +116,7 @@ Claude sees three tools:
 
 ## Security
 
-mcp-govern is entirely self-hosted. Your warehouse credentials, query text, and results never leave your infrastructure. Set `WEBHOOK_SECRET` to require a shared secret on every request from Claude.
+Datameter is entirely self-hosted. Your warehouse credentials, query text, and results never leave your infrastructure. Set `WEBHOOK_SECRET` to require a shared secret on every request from Claude.
 
 ---
 
