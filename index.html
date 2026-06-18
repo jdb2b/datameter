@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Datameter — The data engineer you don't have</title>
+<meta name="description" content="Datameter sits between Claude and your data warehouse — logging every AI-generated query, tracking costs, and flagging what you should cache before your bill surprises you.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --black:#0D0D0D;--white:#FAFAF8;--gray-100:#F2F1EE;--gray-200:#E4E3DF;
+  --gray-400:#A8A69F;--gray-600:#6B6965;--gray-800:#2C2B28;
+  --blue:#1A56DB;--blue-light:#EBF1FD;--blue-mid:#3B82F6;
+  --green:#065F46;--green-light:#D1FAE5;
+  --font-sans:'Inter',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono','Fira Code',monospace;
+  --radius:6px;--radius-lg:10px;
+}
+html{scroll-behavior:smooth}
+body{font-family:var(--font-sans);background:var(--white);color:var(--black);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.container{max-width:960px;margin:0 auto;padding:0 24px}
+
+nav{border-bottom:1px solid var(--gray-200);padding:18px 0;position:sticky;top:0;background:rgba(250,250,248,0.92);backdrop-filter:blur(8px);z-index:100}
+.nav-inner{display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:var(--font-mono);font-size:15px;font-weight:500;color:var(--black);text-decoration:none;display:flex;align-items:center;gap:8px}
+.logo-mark{width:7px;height:7px;border-radius:50%;background:var(--blue);display:inline-block}
+.nav-right{display:flex;align-items:center;gap:20px}
+.nav-link{font-size:14px;color:var(--gray-600);text-decoration:none}
+.nav-link:hover{color:var(--black)}
+.nav-cta{font-size:13px;font-weight:500;color:var(--white);background:var(--black);padding:8px 16px;border-radius:var(--radius);text-decoration:none;border:none;cursor:pointer}
+.nav-cta:hover{background:var(--gray-800)}
+
+.hero{padding:96px 0 64px;max-width:600px}
+.hero-eyebrow{font-family:var(--font-mono);font-size:12px;color:var(--gray-600);letter-spacing:0.06em;margin-bottom:24px;display:flex;align-items:center;gap:8px}
+.hero-eyebrow::before{content:'';display:inline-block;width:20px;height:1px;background:var(--gray-400)}
+.hero h1{font-size:clamp(36px,5vw,52px);font-weight:500;line-height:1.12;letter-spacing:-0.02em;color:var(--black);margin-bottom:20px}
+.hero h1 em{font-style:normal;color:var(--gray-600)}
+.hero-sub{font-size:17px;color:var(--gray-600);line-height:1.65;margin-bottom:36px;max-width:480px}
+.hero-form{display:flex;gap:8px}
+.hero-form input{flex:1;max-width:280px;padding:10px 14px;font-size:14px;font-family:var(--font-sans);border:1px solid var(--gray-200);border-radius:var(--radius);background:var(--white);color:var(--black);outline:none}
+.hero-form input:focus{border-color:var(--blue)}
+.hero-form input::placeholder{color:var(--gray-400)}
+.hero-form button{padding:10px 20px;font-size:14px;font-weight:500;font-family:var(--font-sans);background:var(--black);color:var(--white);border:none;border-radius:var(--radius);cursor:pointer;white-space:nowrap}
+.hero-form button:hover{background:var(--gray-800)}
+.hero-note{margin-top:10px;font-size:12px;color:var(--gray-400);font-family:var(--font-mono)}
+
+.chat-section{padding:0 0 80px}
+.chat-window{background:#F9F9F7;border:1px solid var(--gray-200);border-radius:var(--radius-lg);overflow:hidden}
+.chat-topbar{background:var(--white);border-bottom:1px solid var(--gray-200);padding:11px 16px;display:flex;align-items:center;justify-content:center}
+.chat-topbar-title{font-size:13px;color:var(--gray-600);font-family:var(--font-mono)}
+.chat-body{padding:20px;display:flex;flex-direction:column;gap:14px}
+
+.msg{display:flex;gap:10px;align-items:flex-start}
+.msg-avatar{width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500}
+.msg-avatar.user{background:var(--gray-800);color:var(--white)}
+.msg-avatar.claude{background:#CC785C;color:var(--white)}
+.msg-bubble{flex:1}
+.msg-name{font-size:11px;color:var(--gray-400);margin-bottom:3px;font-family:var(--font-mono)}
+.msg-text{font-size:14px;color:var(--gray-800);line-height:1.6}
+
+.tool-call{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);padding:8px 12px;margin:6px 0;display:flex;align-items:center;gap:8px}
+.tool-call-text{font-size:12px;font-family:var(--font-mono);color:var(--gray-600)}
+.tool-call-badge{margin-left:auto;font-size:11px;font-family:var(--font-mono);background:var(--green-light);color:var(--green);padding:2px 8px;border-radius:100px}
+
+.report-card{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);overflow:hidden;margin-top:6px}
+.report-card-header{padding:8px 14px;background:var(--gray-100);border-bottom:1px solid var(--gray-200);font-family:var(--font-mono);font-size:11px;color:var(--gray-600);display:flex;justify-content:space-between}
+.report-stats{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid var(--gray-200)}
+.report-stat{padding:10px 14px;border-right:1px solid var(--gray-200)}
+.report-stat:last-child{border-right:none}
+.report-stat-val{font-size:15px;font-weight:500;color:var(--gray-800);font-family:var(--font-mono)}
+.report-stat-label{font-size:11px;color:var(--gray-400);margin-top:2px}
+.report-query-row{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;border-bottom:1px solid var(--gray-200);gap:12px}
+.report-query-row:last-of-type{border-bottom:none}
+.report-query-text{font-size:12px;color:var(--gray-800);flex:1}
+.report-query-sql{font-family:var(--font-mono);font-size:10px;color:var(--gray-400);margin-top:1px}
+.cost-pill{font-size:11px;padding:2px 8px;border-radius:100px;font-weight:500;font-family:var(--font-mono);white-space:nowrap}
+.cost-high{background:#FEE2E2;color:#991B1B}
+.cost-med{background:#FEF3C7;color:#92400E}
+.cost-low{background:#D1FAE5;color:#065F46}
+.report-insight{margin:8px 14px 12px;background:#EFF6FF;border-left:2px solid var(--blue-mid);padding:8px 12px;border-radius:0 4px 4px 0;font-size:12px;color:#1E40AF;line-height:1.6}
+
+.problem-section{padding:80px 0;border-top:1px solid var(--gray-200)}
+.section-label{font-family:var(--font-mono);font-size:11px;color:var(--gray-400);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:20px}
+.problem-grid{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:start}
+.problem-grid h2{font-size:28px;font-weight:500;line-height:1.3;letter-spacing:-0.01em;color:var(--black)}
+.problem-grid p{font-size:15px;color:var(--gray-600);line-height:1.7;margin-top:16px}
+
+.flow-section{padding:80px 0;border-top:1px solid var(--gray-200)}
+.flow{display:flex;align-items:center;margin-top:32px}
+.flow-node{flex:1;border:1px solid var(--gray-200);border-radius:var(--radius-lg);padding:20px;text-align:center;background:var(--white)}
+.flow-node.active{border-color:var(--blue);background:var(--blue-light)}
+.flow-icon{font-size:22px;margin-bottom:8px}
+.flow-name{font-size:14px;font-weight:500;color:var(--black);margin-bottom:4px}
+.flow-node.active .flow-name{color:var(--blue)}
+.flow-sub{font-size:12px;color:var(--gray-400);font-family:var(--font-mono)}
+.flow-arrow{padding:0 10px;color:var(--gray-400);font-size:18px;flex-shrink:0}
+.flow-note{margin-top:20px;font-size:13px;color:var(--gray-600);line-height:1.6;border-left:2px solid var(--gray-200);padding-left:16px}
+
+.features-section{padding:80px 0;border-top:1px solid var(--gray-200)}
+.features-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--gray-200);border:1px solid var(--gray-200);border-radius:var(--radius-lg);overflow:hidden;margin-top:32px}
+.feature{background:var(--white);padding:28px}
+.feature-num{font-family:var(--font-mono);font-size:11px;color:var(--gray-400);margin-bottom:14px}
+.feature h3{font-size:16px;font-weight:500;color:var(--black);margin-bottom:8px}
+.feature p{font-size:14px;color:var(--gray-600);line-height:1.65}
+
+.warehouses-section{padding:80px 0;border-top:1px solid var(--gray-200)}
+.warehouse-list{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
+.warehouse-tag{font-family:var(--font-mono);font-size:13px;padding:6px 14px;border:1px solid var(--gray-200);border-radius:100px;color:var(--gray-600);background:var(--white)}
+.warehouse-tag.coming{color:var(--gray-400);border-style:dashed}
+
+.cta-section{padding:96px 0;border-top:1px solid var(--gray-200);text-align:center}
+.cta-section h2{font-size:32px;font-weight:500;letter-spacing:-0.01em;color:var(--black);margin-bottom:12px}
+.cta-section p{font-size:16px;color:var(--gray-600);margin-bottom:32px}
+.cta-form{display:flex;gap:8px;justify-content:center}
+.cta-form input{width:260px;padding:10px 14px;font-size:14px;font-family:var(--font-sans);border:1px solid var(--gray-200);border-radius:var(--radius);background:var(--white);color:var(--black);outline:none}
+.cta-form input:focus{border-color:var(--blue)}
+.cta-form input::placeholder{color:var(--gray-400)}
+.cta-form button{padding:10px 20px;font-size:14px;font-weight:500;font-family:var(--font-sans);background:var(--black);color:var(--white);border:none;border-radius:var(--radius);cursor:pointer}
+.cta-form button:hover{background:var(--gray-800)}
+.cta-options{margin-top:16px;font-size:13px;color:var(--gray-400);font-family:var(--font-mono)}
+
+footer{padding:28px 0;border-top:1px solid var(--gray-200)}
+.footer-inner{display:flex;align-items:center;justify-content:space-between}
+.footer-logo{font-family:var(--font-mono);font-size:14px;color:var(--gray-600);display:flex;align-items:center;gap:7px}
+.footer-links{display:flex;gap:20px}
+.footer-links a{font-size:13px;color:var(--gray-400);text-decoration:none}
+.footer-links a:hover{color:var(--gray-600)}
+
+@media(max-width:640px){
+  .hero{padding:64px 0 48px}
+  .hero-form,.cta-form{flex-direction:column;align-items:flex-start}
+  .hero-form input,.cta-form input{max-width:100%;width:100%}
+  .cta-form{align-items:center}
+  .problem-grid{grid-template-columns:1fr;gap:24px}
+  .flow{flex-direction:column}
+  .flow-arrow{transform:rotate(90deg);padding:8px 0}
+  .features-grid{grid-template-columns:1fr}
+  .report-stats{grid-template-columns:1fr 1fr}
+  .report-stat:nth-child(2){border-right:none}
+  .report-stat:nth-child(3){border-top:1px solid var(--gray-200);grid-column:1/-1}
+  .nav-right .nav-link{display:none}
+  .footer-inner{flex-direction:column;gap:16px;text-align:center}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="container">
+    <div class="nav-inner">
+      <a href="#" class="logo"><span class="logo-mark"></span>datameter</a>
+      <div class="nav-right">
+        <a href="#how-it-works" class="nav-link">How it works</a>
+        <a href="https://github.com/jdb2b/datameter" class="nav-link" target="_blank">GitHub</a>
+        <a href="#get-access" class="nav-cta">Get early access</a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<main>
+  <div class="container">
+
+    <section class="hero">
+      <div class="hero-eyebrow">Early access — Databricks · Snowflake · BigQuery</div>
+      <h1>The data engineer<br><em>you don't have</em></h1>
+      <p class="hero-sub">Datameter sits between Claude and your data warehouse — logging every AI-generated query, estimating costs, and telling you exactly what to cache before your bill surprises you.</p>
+      <div class="hero-form">
+        <input type="email" placeholder="you@company.com" id="hero-email" />
+        <button onclick="handleSignup('hero-email',this)">Request access</button>
+      </div>
+      <div class="hero-note">// self-hosted and hosted options available</div>
+    </section>
+
+    <section class="chat-section">
+      <div class="chat-window">
+        <div class="chat-topbar">
+          <div class="chat-topbar-title">Claude — New conversation</div>
+        </div>
+        <div class="chat-body">
+
+          <div class="msg">
+            <div class="msg-avatar user">JD</div>
+            <div class="msg-bubble">
+              <div class="msg-name">you</div>
+              <div class="msg-text">show me this week's query report</div>
+            </div>
+          </div>
+
+          <div class="msg">
+            <div class="msg-avatar claude">C</div>
+            <div class="msg-bubble">
+              <div class="msg-name">claude</div>
+              <div class="tool-call">
+                <div class="tool-call-text">get_query_report · period="week"</div>
+                <div class="tool-call-badge">datameter</div>
+              </div>
+              <div class="report-card">
+                <div class="report-card-header">
+                  <span>query cost report — last 7 days</span>
+                  <span>8 users · Databricks SQL</span>
+                </div>
+                <div class="report-stats">
+                  <div class="report-stat">
+                    <div class="report-stat-val">$18.47</div>
+                    <div class="report-stat-label">total spend</div>
+                  </div>
+                  <div class="report-stat">
+                    <div class="report-stat-val">147</div>
+                    <div class="report-stat-label">queries run</div>
+                  </div>
+                  <div class="report-stat">
+                    <div class="report-stat-val">$6.20</div>
+                    <div class="report-stat-label">cacheable spend</div>
+                  </div>
+                </div>
+                <div class="report-query-row">
+                  <div>
+                    <div class="report-query-text">Top accounts by MQL volume last quarter</div>
+                    <div class="report-query-sql">SELECT account_id, COUNT(*) FROM pipeline JOIN deals ON...</div>
+                  </div>
+                  <span class="cost-pill cost-high">$2.84</span>
+                </div>
+                <div class="report-query-row">
+                  <div>
+                    <div class="report-query-text">Churn rate by cohort, last 6 months</div>
+                    <div class="report-query-sql">SELECT cohort_month, COUNT(churned) / COUNT(*) FROM...</div>
+                  </div>
+                  <span class="cost-pill cost-med">$1.93</span>
+                </div>
+                <div class="report-query-row">
+                  <div>
+                    <div class="report-query-text">Meetings this week by rep</div>
+                    <div class="report-query-sql">SELECT rep_id, COUNT(*) FROM meetings WHERE created_at...</div>
+                  </div>
+                  <span class="cost-pill cost-low">$0.28</span>
+                </div>
+                <div class="report-insight">
+                  ⚡ Cache opportunity — "Top accounts by MQL volume" ran 11× this week ($6.20 total, 34% of spend). This question should be a saved view, not a live query every time.
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <section class="problem-section" id="how-it-works">
+      <div class="section-label">The problem</div>
+      <div class="problem-grid">
+        <h2>Claude doesn't know what queries cost. Your bill does.</h2>
+        <div>
+          <p>When you give your team Claude + Databricks, you get natural language analytics. You also get full table scans, repeated queries, and a warehouse bill that's hard to explain to finance.</p>
+          <p>Datameter gives you the visibility layer you'd normally need to hire a data engineer for — without the hiring.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="flow-section">
+      <div class="section-label">How it works</div>
+      <div class="flow">
+        <div class="flow-node">
+          <div class="flow-icon">💬</div>
+          <div class="flow-name">Claude</div>
+          <div class="flow-sub">natural language</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node active">
+          <div class="flow-icon">📊</div>
+          <div class="flow-name">Datameter</div>
+          <div class="flow-sub">log · cost · insight</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">
+          <div class="flow-icon">🏭</div>
+          <div class="flow-name">Your warehouse</div>
+          <div class="flow-sub">Databricks · Snowflake · BigQuery</div>
+        </div>
+      </div>
+      <p class="flow-note">Datameter registers as a custom MCP connector in Claude.ai. Your team doesn't change how they work — they just get a cost report when they need it.</p>
+    </section>
+
+    <section class="features-section">
+      <div class="section-label">What you get</div>
+      <div class="features-grid">
+        <div class="feature">
+          <div class="feature-num">01</div>
+          <h3>Query cost visibility</h3>
+          <p>Every AI-generated query is logged with an estimated cost, duration, and the natural language question that triggered it. No guessing what's driving your warehouse bill.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-num">02</div>
+          <h3>Cache recommendations</h3>
+          <p>Repeated queries are flagged automatically. Datameter tells you exactly which questions your team keeps asking that should be saved views or dashboards instead.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-num">03</div>
+          <h3>Self-hosted option</h3>
+          <p>Deploy in your own infrastructure. Warehouse credentials, query text, and results never leave your environment. One Docker container, five environment variables.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-num">04</div>
+          <h3>Ask Claude for a cost report</h3>
+          <p>No dashboard to log into. Ask Claude "show me this week's query report" and Datameter returns cost, top queries, and cache opportunities right in the conversation.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="warehouses-section">
+      <div class="section-label">Supported warehouses</div>
+      <div class="warehouse-list">
+        <span class="warehouse-tag">Databricks</span>
+        <span class="warehouse-tag">Snowflake</span>
+        <span class="warehouse-tag">BigQuery</span>
+        <span class="warehouse-tag coming">ClickHouse — coming</span>
+      </div>
+    </section>
+
+    <section class="cta-section" id="get-access">
+      <h2>Get early access</h2>
+      <p>We're onboarding a small number of teams now. No credit card required.</p>
+      <div class="cta-form">
+        <input type="email" placeholder="you@company.com" id="cta-email" />
+        <button onclick="handleSignup('cta-email',this)">Request access</button>
+      </div>
+      <div class="cta-options">// self-hosted · hosted · Anthropic marketplace</div>
+    </section>
+
+  </div>
+</main>
+
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-logo"><span class="logo-mark"></span>datameter</div>
+      <div class="footer-links">
+        <a href="https://github.com/jdb2b/datameter" target="_blank">GitHub</a>
+        <a href="mailto:jd@quorom.io">Contact</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+function handleSignup(inputId, btn) {
+  const input = document.getElementById(inputId);
+  if (!input.value || !input.value.includes('@')) {
+    input.focus();
+    input.style.borderColor = '#991B1B';
+    setTimeout(() => input.style.borderColor = '', 1500);
+    return;
+  }
+  btn.textContent = 'Requested ✓';
+  btn.style.background = '#065F46';
+  btn.disabled = true;
+  input.disabled = true;
+}
+</script>
+
+</body>
+</html>
