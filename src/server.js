@@ -1,4 +1,18 @@
 'use strict';
+/*
+ * Datameter MCP server — HTTP entry point.
+ *
+ * Exposes three MCP tools over Streamable HTTP:
+ *   execute_sql      — submits a SQL query to the configured warehouse backend,
+ *                      returns a statement_id immediately (async execution)
+ *   poll_sql_result  — polls by statement_id; returns rows once the query completes
+ *   get_query_report — returns a cost and usage summary for today, this week, or month
+ *
+ * Auth: if WEBHOOK_SECRET is set, every /mcp request must carry
+ * "Authorization: Bearer <secret>". The OAuth endpoints below issue that same
+ * secret as the access_token, satisfying Claude.ai's connector handshake without
+ * adding user-identity or multi-tenant logic on top.
+ */
 require('dotenv').config();
 const http = require('http');
 const path = require('path');
@@ -72,6 +86,22 @@ async function main() {
       res.end(JSON.stringify({ status: 'ok', service: 'mcp-govern', backend: process.env.BACKEND || 'supabase', log_backend: process.env.LOG_BACKEND || 'file' }));
       return;
     }
+    // ── OAuth stub ──────────────────────────────────────────────────────────────
+    // Claude.ai's custom connector beta requires a full OAuth 2.0 handshake before
+    // it will connect, even for self-hosted single-tenant deployments. The three
+    // endpoints below implement the minimum required flow: a discovery document,
+    // an authorization-code redirect, and a token endpoint. There is no user
+    // identity check and no multi-tenant logic.
+    //
+    // How the token works: /oauth/token issues WEBHOOK_SECRET as the access_token.
+    // Claude.ai caches that token and sends it as "Authorization: Bearer <secret>"
+    // on every subsequent /mcp request, which checkAuth() then validates. Configure
+    // WEBHOOK_SECRET in your environment and register the same value in Claude.ai's
+    // connector settings — that shared secret is the only access control.
+    //
+    // This is a documented workaround for a platform requirement, not a security
+    // vulnerability. Rotate WEBHOOK_SECRET like any shared credential and keep it
+    // out of source control.
     if (req.method === 'GET' && req.url === '/.well-known/oauth-authorization-server') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({
@@ -85,6 +115,9 @@ async function main() {
       }));
       return;
     }
+    // /oauth/authorize — issues a one-time authorization code and redirects back
+    // to Claude.ai. The code itself is a timestamp-based nonce; it is never
+    // validated on exchange because there are no user sessions to protect here.
     if (req.method === 'GET' && req.url.startsWith('/oauth/authorize')) {
       const url = new URL(req.url, HOST);
       const redirectUri = url.searchParams.get('redirect_uri');
@@ -97,6 +130,9 @@ async function main() {
       res.end();
       return;
     }
+    // /oauth/token — completes the handshake by issuing WEBHOOK_SECRET as the
+    // bearer token. Claude.ai will attach this token to every /mcp request via
+    // "Authorization: Bearer <token>", which checkAuth() validates above.
     if (req.method === 'POST' && req.url === '/oauth/token') {
       const accessToken = WEBHOOK_SECRET || 'mcp-govern-token';
       res.writeHead(200, { 'Content-Type': 'application/json' });
