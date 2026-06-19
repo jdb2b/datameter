@@ -2,7 +2,7 @@
 
 ## 1. Fork the repo
 
-Fork [github.com/jdb2b/datameter](https://github.com/jdb2b/datameter) into LeadIQ's GitLab. Deploying from your own fork means the running code is fully under your control — you can audit changes, pin to a specific commit, and merge upstream updates on your own schedule.
+Fork [github.com/jdb2b/datameter](https://github.com/jdb2b/datameter) into your own Git host (GitHub, GitLab, etc.). Deploying from your own fork means the running code is fully under your control — you can audit changes, pin to a specific commit, and merge upstream updates on your own schedule.
 
 ---
 
@@ -11,12 +11,12 @@ Fork [github.com/jdb2b/datameter](https://github.com/jdb2b/datameter) into LeadI
 **Create the service**
 
 - New service → Docker Compose
-- Source: your GitLab fork
+- Source: your fork
 - Branch: `main`
 
 **Set the domain**
 
-- Domain: `YOUR_DOMAIN` (e.g. `datameter.leadiq.com`)
+- Domain: `YOUR_DOMAIN` (e.g. `datameter.yourcompany.com`)
 - Enable HTTPS
 
 **Add environment variables**
@@ -51,22 +51,22 @@ Expected response: `{"status":"ok",...}`
 
 ## 3. Credentials
 
-Retrieve these values from 1Password before deploying:
+These four values must be kept secret. Store them in your team's secrets manager before deploying.
 
-| Variable | Where to find it |
+| Variable | Description |
 |---|---|
-| `DATABRICKS_HOST` | 1Password — Datameter / Databricks Host |
-| `DATABRICKS_TOKEN` | 1Password — Datameter / Databricks Token |
-| `DATABRICKS_WAREHOUSE_ID` | 1Password — Datameter / Databricks Warehouse ID |
-| `WEBHOOK_SECRET` | 1Password — Datameter / Webhook Secret |
+| `DATABRICKS_HOST` | Workspace URL from your Databricks admin |
+| `DATABRICKS_TOKEN` | Personal access token with SQL warehouse access |
+| `DATABRICKS_WAREHOUSE_ID` | ID of the SQL warehouse to run queries against |
+| `WEBHOOK_SECRET` | A randomly generated string — see below |
 
-If `WEBHOOK_SECRET` hasn't been generated yet, create one:
+Generate `WEBHOOK_SECRET`:
 
 ```bash
 openssl rand -hex 32
 ```
 
-Store the output in 1Password before using it.
+Store the output in your secrets manager before use.
 
 ---
 
