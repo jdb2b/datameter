@@ -18,7 +18,7 @@ function estimateCost({ durationMs, rowsReturned, joinCount, hasLimit, hasGroupB
   const cost = BASE_RATE * Math.max(seconds, 0.05) * joinMult * rowFactor * limitDisc * groupByMult;
   return Math.round(cost * 10000) / 10000;
 }
-function buildEntry({ toolName, sqlText, durationMs, rowsReturned, error }) {
+function buildEntry({ toolName, sqlText, durationMs, rowsReturned, error, user }) {
   const { joinCount, hasLimit, hasGroupBy } = analyzeSql(sqlText);
   const estimatedCostUsd = error ? 0 : estimateCost({ durationMs, rowsReturned, joinCount, hasLimit, hasGroupBy });
   return {
@@ -32,6 +32,7 @@ function buildEntry({ toolName, sqlText, durationMs, rowsReturned, error }) {
     has_group_by:   hasGroupBy,
     estimated_cost: estimatedCostUsd,
     error:          error || null,
+    user:           user || null,
   };
 }
 function hourLabel(h) {
@@ -74,7 +75,8 @@ function formatReport(entries, period) {
   } else {
     top5.forEach((q, i) => {
       lines.push(`**${i + 1}.** \`${(q.sql_text || '').slice(0, 80)}...\``);
-      lines.push(`   Cost: $${(q.estimated_cost || 0).toFixed(4)} · Duration: ${q.duration_ms}ms · Rows: ${q.rows_returned} · ${q.timestamp}`);
+      const userTag = q.user ? ` · User: ${q.user}` : '';
+      lines.push(`   Cost: $${(q.estimated_cost || 0).toFixed(4)} · Duration: ${q.duration_ms}ms · Rows: ${q.rows_returned}${userTag} · ${q.timestamp}`);
     });
   }
   lines.push('', '### Cache candidates (run 2+ times)');
@@ -122,6 +124,23 @@ function formatReport(entries, period) {
   } else {
     topTables.forEach(([table, { cost, count }]) => {
       lines.push(`- **${table}** — $${cost.toFixed(4)} (${count} quer${count === 1 ? 'y' : 'ies'})`);
+    });
+  }
+  // Cost by user
+  const userMap = {};
+  successful.forEach(e => {
+    const u = e.user || '(unknown)';
+    if (!userMap[u]) userMap[u] = { cost: 0, count: 0 };
+    userMap[u].cost  += e.estimated_cost || 0;
+    userMap[u].count += 1;
+  });
+  const topUsers = Object.entries(userMap).sort((a, b) => b[1].cost - a[1].cost).slice(0, 5);
+  lines.push('', '### Cost by user (top 5)');
+  if (!topUsers.length) {
+    lines.push('No data yet.');
+  } else {
+    topUsers.forEach(([u, { cost, count }]) => {
+      lines.push(`- **${u}** — $${cost.toFixed(4)} (${count} quer${count === 1 ? 'y' : 'ies'})`);
     });
   }
   return lines.join('\n');

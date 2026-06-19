@@ -15,7 +15,7 @@ async function ensureTable() {
     await client.query(`CREATE TABLE IF NOT EXISTS query_logs (
       id SERIAL PRIMARY KEY, timestamp TIMESTAMPTZ NOT NULL, tool_name TEXT NOT NULL,
       sql_text TEXT, duration_ms INTEGER, rows_returned INTEGER, join_count INTEGER,
-      has_limit BOOLEAN, has_group_by BOOLEAN, estimated_cost NUMERIC(10,6), error TEXT)`);
+      has_limit BOOLEAN, has_group_by BOOLEAN, estimated_cost NUMERIC(10,6), error TEXT, user TEXT)`);
   } finally { client.release(); }
 }
 async function logQuery(params) {
@@ -24,8 +24,8 @@ async function logQuery(params) {
   const client = await getPool().connect();
   try {
     await client.query(
-      `INSERT INTO query_logs (timestamp,tool_name,sql_text,duration_ms,rows_returned,join_count,has_limit,has_group_by,estimated_cost,error) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-      [entry.timestamp,entry.tool_name,entry.sql_text,entry.duration_ms,entry.rows_returned,entry.join_count,entry.has_limit,entry.has_group_by,entry.estimated_cost,entry.error]
+      `INSERT INTO query_logs (timestamp,tool_name,sql_text,duration_ms,rows_returned,join_count,has_limit,has_group_by,estimated_cost,error,user) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+      [entry.timestamp,entry.tool_name,entry.sql_text,entry.duration_ms,entry.rows_returned,entry.join_count,entry.has_limit,entry.has_group_by,entry.estimated_cost,entry.error,entry.user]
     );
   } finally { client.release(); }
   return entry.estimated_cost;

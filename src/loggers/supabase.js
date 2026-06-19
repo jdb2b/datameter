@@ -16,7 +16,7 @@ async function logQuery(params) {
   await sb.from('query_logs').insert({
     timestamp: entry.timestamp, tool_name: entry.tool_name, sql_text: entry.sql_text,
     duration_ms: entry.duration_ms, rows_returned: entry.rows_returned, join_count: entry.join_count,
-    has_limit: entry.has_limit, has_group_by: entry.has_group_by, estimated_cost: entry.estimated_cost, error: entry.error,
+    has_limit: entry.has_limit, has_group_by: entry.has_group_by, estimated_cost: entry.estimated_cost, error: entry.error, user: entry.user,
   });
   return entry.estimated_cost;
 }

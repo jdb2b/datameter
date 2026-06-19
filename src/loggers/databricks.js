@@ -36,8 +36,8 @@ async function logQuery(params) {
   const esc = v => v === null || v === undefined ? 'NULL' : `'${String(v).replace(/'/g, "''")}'`;
   await sqlRequest(`CREATE CATALOG IF NOT EXISTS ${catalog}`, config).catch(() => {});
   await sqlRequest(`CREATE SCHEMA IF NOT EXISTS ${catalog}.${schema}`, config).catch(() => {});
-  await sqlRequest(`CREATE TABLE IF NOT EXISTS ${catalog}.${schema}.${table} (timestamp TIMESTAMP, tool_name STRING, sql_text STRING, duration_ms INT, rows_returned INT, join_count INT, has_limit BOOLEAN, has_group_by BOOLEAN, estimated_cost DOUBLE, error STRING) USING DELTA`, config).catch(() => {});
-  await sqlRequest(`INSERT INTO ${catalog}.${schema}.${table} VALUES (TIMESTAMP '${entry.timestamp}', ${esc(entry.tool_name)}, ${esc(entry.sql_text)}, ${entry.duration_ms ?? 'NULL'}, ${entry.rows_returned ?? 'NULL'}, ${entry.join_count}, ${entry.has_limit}, ${entry.has_group_by}, ${entry.estimated_cost}, ${esc(entry.error)})`, config);
+  await sqlRequest(`CREATE TABLE IF NOT EXISTS ${catalog}.${schema}.${table} (timestamp TIMESTAMP, tool_name STRING, sql_text STRING, duration_ms INT, rows_returned INT, join_count INT, has_limit BOOLEAN, has_group_by BOOLEAN, estimated_cost DOUBLE, error STRING, user STRING) USING DELTA`, config).catch(() => {});
+  await sqlRequest(`INSERT INTO ${catalog}.${schema}.${table} VALUES (TIMESTAMP '${entry.timestamp}', ${esc(entry.tool_name)}, ${esc(entry.sql_text)}, ${entry.duration_ms ?? 'NULL'}, ${entry.rows_returned ?? 'NULL'}, ${entry.join_count}, ${entry.has_limit}, ${entry.has_group_by}, ${entry.estimated_cost}, ${esc(entry.error)}, ${esc(entry.user)})`, config);
   return entry.estimated_cost;
 }
 async function getReport({ period = 'week' } = {}) {

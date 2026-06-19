@@ -38,16 +38,16 @@ function checkAuth(req) {
 function createMcpServer() {
   const server = new McpServer({ name: 'datameter', version: '0.1.0' });
   server.tool('execute_sql', 'Execute a SQL query against the configured data warehouse. Returns a statement_id — poll with poll_sql_result.',
-    { sql: z.string().describe('SQL query to execute'), warehouse_id: z.string().optional().describe('Warehouse ID (Databricks only)') },
-    async ({ sql }) => {
+    { sql: z.string().describe('SQL query to execute'), warehouse_id: z.string().optional().describe('Warehouse ID (Databricks only)'), user: z.string().optional().describe('Name or email of the person running this query — used for attribution in cost reports') },
+    async ({ sql, user }) => {
       const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
       setImmediate(async () => {
         try {
           const result = await backend.executeSQL(sql);
-          const cost = await logQuery({ toolName: 'execute_sql', sqlText: sql, durationMs: result.durationMs, rowsReturned: result.rowCount, error: result.ok ? null : result.error });
+          const cost = await logQuery({ toolName: 'execute_sql', sqlText: sql, durationMs: result.durationMs, rowsReturned: result.rowCount, error: result.ok ? null : result.error, user });
           pendingResults.set(jobId, { status: result.ok ? 'SUCCEEDED' : 'FAILED', data: result.ok ? result.rows : null, error: result.ok ? null : result.error, row_count: result.rowCount, duration_ms: result.durationMs, estimated_cost_usd: cost });
         } catch (err) {
-          await logQuery({ toolName: 'execute_sql', sqlText: sql, error: err.message }).catch(() => {});
+          await logQuery({ toolName: 'execute_sql', sqlText: sql, error: err.message, user }).catch(() => {});
           pendingResults.set(jobId, { status: 'FAILED', error: err.message });
         }
         setTimeout(() => pendingResults.delete(jobId), 10 * 60 * 1000);
