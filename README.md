@@ -61,6 +61,8 @@ In Claude.ai → Settings → Integrations → Add custom connector:
 curl https://datameter.yourcompany.com/health
 ```
 
+If anything doesn't work as expected, see [TROUBLESHOOTING.md](./TROUBLESHOOTING.md).
+
 ---
 
 ## Environment variables
@@ -109,7 +111,7 @@ Claude sees three tools:
 |---|---|
 | `execute_sql` | Submits a SQL query for async execution and returns a `statement_id` |
 | `poll_sql_result` | Polls by `statement_id` and returns rows once the query completes |
-| `get_query_report` | Returns a cost and usage summary for the current day, week, or month |
+| `get_query_report` | Returns a cost and usage report including summary stats, top queries by cost, cache candidates, cost by hour of day, most expensive tables, and cost by user |
 
 ---
 
