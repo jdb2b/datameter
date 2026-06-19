@@ -97,3 +97,25 @@ DATABRICKS_LOG_TABLE=query_logs
 ```
 
 Redeploy. Subsequent queries will be appended to the Delta table at `governance.datameter.query_logs`.
+
+---
+
+## 7. Staying up to date
+
+Datameter is under active development. To receive updates from the upstream repo after your initial fork:
+
+**1. Add the upstream remote (one time only):**
+
+```bash
+git remote add upstream https://github.com/jdb2b/datameter.git
+```
+
+**2. When you want to pull in new features:**
+
+```bash
+git fetch upstream
+git merge upstream/main
+git push origin main
+```
+
+Then redeploy in Coolify. If you have auto-deploy enabled on your fork, Coolify will pick up the changes automatically after the push.
