@@ -14,6 +14,7 @@
  * adding user-identity or multi-tenant logic on top.
  */
 require('dotenv').config();
+const crypto = require('crypto');
 const http = require('http');
 const path = require('path');
 const { createRequire } = require('module');
@@ -35,7 +36,7 @@ function checkAuth(req) {
   return token === WEBHOOK_SECRET;
 }
 function createMcpServer() {
-  const server = new McpServer({ name: 'mcp-govern', version: '0.1.0' });
+  const server = new McpServer({ name: 'datameter', version: '0.1.0' });
   server.tool('execute_sql', 'Execute a SQL query against the configured data warehouse. Returns a statement_id — poll with poll_sql_result.',
     { sql: z.string().describe('SQL query to execute'), warehouse_id: z.string().optional().describe('Warehouse ID (Databricks only)') },
     async ({ sql }) => {
@@ -83,7 +84,7 @@ async function main() {
   const httpServer = http.createServer(async (req, res) => {
     if (req.method === 'GET' && req.url === '/health') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ status: 'ok', service: 'mcp-govern', backend: process.env.BACKEND || 'supabase', log_backend: process.env.LOG_BACKEND || 'file' }));
+      res.end(JSON.stringify({ status: 'ok', service: 'datameter', backend: process.env.BACKEND || 'databricks', log_backend: process.env.LOG_BACKEND || 'file' }));
       return;
     }
     // ── OAuth stub ──────────────────────────────────────────────────────────────
@@ -134,7 +135,7 @@ async function main() {
     // bearer token. Claude.ai will attach this token to every /mcp request via
     // "Authorization: Bearer <token>", which checkAuth() validates above.
     if (req.method === 'POST' && req.url === '/oauth/token') {
-      const accessToken = WEBHOOK_SECRET || 'mcp-govern-token';
+      const accessToken = WEBHOOK_SECRET || crypto.randomBytes(32).toString('hex');
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ access_token: accessToken, token_type: 'bearer', expires_in: 3600 }));
       return;
@@ -149,7 +150,7 @@ async function main() {
     await transport.handleRequest(req, res, body);
   });
   httpServer.listen(PORT, () => {
-    console.log(`mcp-govern running\n  Endpoint: ${HOST}/mcp\n  Health:   ${HOST}/health\n  OAuth:    ${HOST}/oauth/authorize  ${HOST}/oauth/token\n  Metadata: ${HOST}/.well-known/oauth-authorization-server\n  Backend:  ${process.env.BACKEND || 'supabase'}\n  Logs:     ${process.env.LOG_BACKEND || 'file'}\n  Auth:     ${WEBHOOK_SECRET ? 'enabled' : 'disabled'}`);
+    console.log(`datameter running\n  Endpoint: ${HOST}/mcp\n  Health:   ${HOST}/health\n  OAuth:    ${HOST}/oauth/authorize  ${HOST}/oauth/token\n  Metadata: ${HOST}/.well-known/oauth-authorization-server\n  Backend:  ${process.env.BACKEND || 'databricks'}\n  Logs:     ${process.env.LOG_BACKEND || 'file'}\n  Auth:     ${WEBHOOK_SECRET ? 'enabled' : 'disabled'}`);
   });
 }
 main().catch(err => { console.error('Fatal:', err); process.exit(1); });

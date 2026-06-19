@@ -1,5 +1,5 @@
 {
-  "name": "mcp-govern",
+  "name": "datameter",
   "version": "0.1.0",
   "description": "Cost governance and query logging wrapper for AI-generated warehouse queries",
   "main": "src/server.js",
